@@ -1,4 +1,4 @@
-package hello;
+package com.github.cybodelic.skaddo;
 
 import java.util.Arrays;
 
