@@ -1,4 +1,4 @@
-package hello;
+package com.github.cybodelic.skaddo.controller;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -29,11 +29,11 @@ public class HelloControllerITTest {
 
     @Before
     public void setUp() throws Exception {
-        this.base = new URL("http://localhost:" + port + "/");
+        this.base = new URL("http://localhost:" + port + "/players/axel/greeting");
     }
 
     @Test
-    public void getHello() throws Exception {
+    public void getHello() {
         ResponseEntity<String> response = template.getForEntity(base.toString(),
                 String.class);
         assertThat(response.getBody(), equalTo("Greetings from Spring Boot!"));

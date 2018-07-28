@@ -2,25 +2,32 @@ package com.github.cybodelic.skaddo.domain;
 
 public class Round implements Comparable<Round> {
 
-    private long id;
+    private Player declarer;
 
-    final private Player declarer;
-
-    final private int score;
+    private int score;
 
     private int index;
 
     public Round(Player declarer, int score) {
         this.declarer = declarer;
         this.score = score;
+        this.index = -1;
     }
 
     public Player getDeclarer() {
         return declarer;
     }
 
+    public void setDeclarer(Player declarer) {
+        this.declarer = declarer;
+    }
+
     public int getScore() {
         return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
     }
 
     protected int getIndex() {
@@ -28,14 +35,6 @@ public class Round implements Comparable<Round> {
     }
 
     protected void setIndex(int index){ this.index = index; }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
 
     @Override
     public int compareTo(Round r) {

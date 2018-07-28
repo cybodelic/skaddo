@@ -6,9 +6,9 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 
-public interface PlayerGroupRepository extends MongoRepository<PlayerGroup, Long> {
+public interface PlayerGroupRepository extends MongoRepository<PlayerGroup, String> {
 
-    public List<PlayerGroup> findAllByName(String name);
+    List<PlayerGroup> findAllByName(String name);
 
-    public List<PlayerGroup> findAllByPlayersUserID(String userID);
+    List<PlayerGroup> findAllByPlayersUserID(String userID);
 }

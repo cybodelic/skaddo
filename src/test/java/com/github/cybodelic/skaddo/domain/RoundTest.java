@@ -8,8 +8,8 @@ public class RoundTest {
 
     @Test
     public void compareToTest() {
-        Round r1 = new Round(new Player(),92);
-        Round r2 = new Round(new Player(),19);
+        Round r1 = new Round(new Player("Player1"),92);
+        Round r2 = new Round(new Player("Player2"),19);
         r1.setIndex(0);
         r2.setIndex(1);
         assertThat(r1.compareTo(r2), lessThan(0));

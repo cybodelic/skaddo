@@ -1,4 +1,4 @@
-package hello;
+package com.github.cybodelic.skaddo.controller;
 
 import org.junit.Ignore;
 import org.junit.Test;
