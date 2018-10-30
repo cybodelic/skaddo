@@ -1,38 +1,40 @@
 package com.github.cybodelic.skaddo.domain;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.hibernate.annotations.GenericGenerator;
 
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
+@Entity
 public class PlayerGroup {
 
     @Id
+    @GeneratedValue(generator = "uuid")
+    @GenericGenerator(name = "uuid", strategy = "uuid2")
     private String id;
 
-    @DBRef
+    @ManyToMany
     private List<Player> players;
 
+    @OneToMany
     private List<Match> matches;
 
     @NotNull(message = "PlayerGroup.name may not be null")
     private String name;
 
-    @DBRef
-    @NotNull(message = "PlayerGroup.createdBy may not be null")
+    @OneToOne
     private Player createdBy;
 
     private LocalDateTime createdAt;
-
-    private Map<Player, Integer> playerScore;
 
     public PlayerGroup() {
         players = new ArrayList<>();
         matches = new ArrayList<>();
         createdAt = LocalDateTime.now();
-        playerScore = new HashMap<>();
     }
 
     public PlayerGroup(String name) {
@@ -40,10 +42,9 @@ public class PlayerGroup {
         this.setName(name);
     }
 
+
     public int getTotalScoreForPlayer(Player player) {
-        if (this.playerScore.containsKey(player))
-            return this.playerScore.get(player);
-        return 0;
+        return this.matches.stream().mapToInt(m -> m.getTotalScoreForPlayer(player)).sum();
     }
 
     public String getName() {
@@ -60,10 +61,9 @@ public class PlayerGroup {
 
     public void setPlayers(List<Player> players) {
         if (this.matches.size() > 0)
-            throw new UnsupportedOperationException("Players of playergroup cannot be changed after matches have been saved.");
+            throw new UnsupportedOperationException(
+                    "Players of playergroup cannot be changed after matches have been saved.");
         this.players = players;
-        this.playerScore = new HashMap<>();
-        players.forEach(p -> this.playerScore.put(p, 0));
     }
 
     public String getId() {
@@ -81,17 +81,13 @@ public class PlayerGroup {
 
     public void saveMatch(Match match) {
         if (this.players.size() != 3 && this.players.size() != 4)
-            throw new IllegalStateException("PlayerGroup must have three or four players before a match can be saved.");
+            throw new IllegalStateException(
+                    "PlayerGroup must have three or four players before a match can be saved.");
 
         if (match.getIndex() == -1) {
             // a new match is being added
             match.setIndex(this.matches.size());
             this.matches.add(match);
-            this.playerScore.forEach(
-                    (player, currentScore) -> {
-                        int newScore = currentScore + match.getTotalScoreForPlayer(player);
-                        this.playerScore.put(player, newScore);
-                    });
         } else {
             // a match is updated
             try {
@@ -99,28 +95,24 @@ public class PlayerGroup {
             } catch (IndexOutOfBoundsException e) {
                 throw new IllegalStateException(
                         String.format(
-                                "Trying to add a match with an invalid index %d. Current list of matches has size %d."
+                                "Trying to add a match with an invalid index %d. Current list of " +
+                                        "matches has size %d."
                                 , match.getIndex()
                                 , getMatches().size())
                 );
             }
-
-            // player scores have to be recalculated completely by iterating over all matches
-            this.playerScore.forEach((k,v) -> this.playerScore.put(k, 0));
-            this.getMatches().forEach(
-                    m -> this.playerScore.forEach(
-                            (player, currentScore) -> {
-                                int newScore = currentScore + m.getTotalScoreForPlayer(player);
-                                this.playerScore.put(player, newScore);
-                            })
-            );
         }
-
-
     }
 
     public void deleteMatch(Match match) {
-        //TODO implement deleteMatch method
+        if (!this.matches.contains(match)) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Match with index=%d cannot be removed because it is not in list of " +
+                                    "matches for this playerGroup"
+                            , match.getIndex()));
+        }
+        this.matches.remove(match);
     }
 
     public Player getCreatedBy() {

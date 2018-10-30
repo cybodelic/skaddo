@@ -1,20 +1,17 @@
 package com.github.cybodelic.skaddo.data;
 
 import com.github.cybodelic.skaddo.domain.Player;
-import com.mongodb.DuplicateKeyException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 
 @RunWith(SpringRunner.class)
@@ -24,9 +21,6 @@ public class PlayerRepositoryTest {
 
     @Autowired
     private PlayerRepository repository;
-
-    @Autowired
-    private MongoDbFactory mongo;
 
     private List<Player> players;
 
@@ -55,23 +49,21 @@ public class PlayerRepositoryTest {
         repository.deleteAll();
         repository.save(players.get(0));
         assertThat(repository.findAll().size()).isEqualTo(1);
-        assertThatThrownBy(
-                () -> repository.insert(players.get(0)))
-                .hasCauseInstanceOf(DuplicateKeyException.class);
-
+        assertThatExceptionOfType(Exception.class).isThrownBy(
+                () -> repository.save(players.get(0))).withMessageContaining("duplicate");
     }
 
     @Test
     public void testFindByUserID() {
-        repository.save(players);
-        Player p1 = repository.findOne(players.get(0).getUserID());
+        repository.saveAll(players);
+        Player p1 = repository.findById(players.get(0).getUserID()).get();
         assertThat(p1.getUserID()).isEqualTo(players.get(0).getUserID());
 
         String additionalPlayerUserID = "Additional.Player@whatsoever.foo";
         Player additionalPlayer = new Player(additionalPlayerUserID);
         additionalPlayer.setNickName("addy");
-        repository.insert(additionalPlayer);
-        Player p2 = repository.findOne(additionalPlayerUserID);
+        repository.save(additionalPlayer);
+        Player p2 = repository.findById(additionalPlayerUserID).get();
         assertThat(p2.getUserID()).isEqualTo(additionalPlayerUserID);
     }
 
@@ -83,14 +75,14 @@ public class PlayerRepositoryTest {
 
     @Test
     public void testFindByUserIDIgnoreCaseStartingWith() {
-        repository.save(players);
+        repository.saveAll(players);
         List<Player> result = repository.findByUserIDIgnoreCaseStartingWith("Player");
         assertThat(result.size()).isEqualTo(2);
     }
 
     @Test
     public void findByNickNameIgnoreCaseStartingWith() {
-        repository.save(players);
+        repository.saveAll(players);
         List<Player> result = repository.findByNickNameIgnoreCaseStartingWith("nick ");
         assertThat(result.size()).isEqualTo(1);
 
@@ -106,7 +98,7 @@ public class PlayerRepositoryTest {
 
     @Test
     public void findByFirstNameIgnoreCaseStartingWith() {
-        repository.save(players);
+        repository.saveAll(players);
         List<Player> result = repository.findByFirstNameIgnoreCaseStartingWith("First");
         assertThat(result.size()).isEqualTo(2);
 
@@ -119,7 +111,7 @@ public class PlayerRepositoryTest {
 
     @Test
     public void findByLastNameIgnoreCaseStartingWith() {
-        repository.save(players);
+        repository.saveAll(players);
         List<Player> result = repository.findByLastNameIgnoreCaseStartingWith("Last");
         assertThat(result.size()).isEqualTo(2);
 
@@ -133,7 +125,7 @@ public class PlayerRepositoryTest {
     @Test
     public void findByComposedNameIgnoreCaseContaining() {
         repository.deleteAll();
-        repository.save(players);
+        repository.saveAll(players);
         List<Player> result = repository.findByComposedNameIgnoreCaseContaining("name-");
         assertThat(result.size()).isEqualTo(1);
 

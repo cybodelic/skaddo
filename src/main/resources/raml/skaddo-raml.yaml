@@ -1,0 +1,136 @@
+#%RAML 1.0
+title: Skaddo
+mediaType: application/json
+description: Manage results of Skat games
+/players:
+  displayName: players
+  '/{id}':
+    displayName: id
+    uriParameters:
+      id:
+        type: string
+    get:
+      displayName: GET-player
+      responses:
+        '200':
+          body:
+            application/json: |-
+              {
+                "type": "player"
+              }
+    put:
+      displayName: PUT-player
+      body:
+        application/json: |-
+          {
+            "type": "player"
+          }
+      responses:
+        '200':
+          body:
+            application/json: |-
+              {
+                "type": "player"
+              }
+    delete:
+      displayName: DELETE-player
+      responses:
+        '204':
+          body:
+            application/json: '{}'
+  get:
+    displayName: LIST-players
+    responses:
+      '200':
+        body:
+          application/json: |-
+            {
+              "type": "array",
+              "items": {
+                "type": "player"
+              }
+            }
+  post:
+    displayName: POST-player
+    body:
+      application/json: |-
+        {
+          "type": "player"
+        }
+    responses:
+      '201':
+        body:
+          application/json: |-
+            {
+              "type": "player"
+            }
+types:
+  player:
+    properties:
+      firstName:
+        type: string
+        required: false
+      nickName:
+        type: string
+        required: false
+      lastName:
+        type: string
+        required: false
+      userId:
+        type: string
+      createdAt:
+        type: datetime
+        format: rfc3339
+        required: false
+    displayName: Player
+  round:
+    properties:
+      index:
+        type: integer
+        required: false
+      declarer:
+        type: player
+        required: false
+      score:
+        type: integer
+    displayName: Round
+  match:
+    properties:
+      date:
+        type: date-only
+      rounds:
+        type:
+        - array
+        items:
+          type: round
+        required: false
+      index:
+        type: integer
+        required: false
+    displayName: Match
+  playergroup:
+    properties:
+      name:
+        type: string
+      players:
+        type:
+        - array
+        items:
+          type: player
+        required: false
+      createdBy:
+        type: player
+        required: false
+      createdAt:
+        type: datetime
+        format: rfc3339
+        required: false
+      id:
+        type: string
+        required: false
+      matches:
+        type: array
+        items:
+          type: match
+        required: false
+    displayName: PlayerGroup

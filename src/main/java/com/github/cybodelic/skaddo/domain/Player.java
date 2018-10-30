@@ -1,20 +1,23 @@
 package com.github.cybodelic.skaddo.domain;
 
-import org.springframework.data.annotation.Id;
+import org.hibernate.annotations.GenericGenerator;
+import org.springframework.data.annotation.CreatedDate;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/**
- * Created by axel on 13.07.17.
- */
+@Entity
 public class Player {
 
     @Id
     @NotNull(message = "Player.userID may not be null")
     private String userID;
 
+    @CreatedDate
     private LocalDateTime createdAt;
 
     private String firstName;
@@ -89,5 +92,22 @@ public class Player {
                 Objects.toString(this.nickName, ""),
                 Objects.toString(this.lastName, "")
         ).trim();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+
+        if (!(obj instanceof Player)) {
+            return false;
+        }
+
+        Player player = (Player) obj;
+        return Objects.equals(this.userID, player.getUserID());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.userID);
     }
 }

@@ -1,20 +1,23 @@
 package com.github.cybodelic.skaddo.data;
 
 import com.github.cybodelic.skaddo.domain.Player;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
 import java.util.List;
 
-public interface PlayerRepository extends MongoRepository<Player, String>{
+@RepositoryRestResource(collectionResourceRel = "users", itemResourceRel = "user", path = "users")
+public interface PlayerRepository extends JpaRepository<Player, String> {
 
-    List<Player> findByNickNameIgnoreCaseStartingWith(String nickName);
+    List<Player> findByNickNameIgnoreCaseStartingWith(@Param("nickName") String nickName);
 
-    List<Player> findByUserIDIgnoreCaseStartingWith(String userID);
+    List<Player> findByUserIDIgnoreCaseStartingWith(@Param("userID") String userID);
 
-    List<Player> findByComposedNameIgnoreCaseContaining(String composedName);
+    List<Player> findByComposedNameIgnoreCaseContaining(@Param("composedName") String composedName);
 
-    List<Player> findByFirstNameIgnoreCaseStartingWith(String firstName);
+    List<Player> findByFirstNameIgnoreCaseStartingWith(@Param("firstName") String firstName);
 
-    List<Player> findByLastNameIgnoreCaseStartingWith(String lastName);
+    List<Player> findByLastNameIgnoreCaseStartingWith(@Param("lastName") String lastName);
 
 }

@@ -1,20 +1,35 @@
 package com.github.cybodelic.skaddo.domain;
 
-import java.lang.reflect.Field;
-import java.time.LocalDate;
-import java.util.*;
+import org.hibernate.annotations.GenericGenerator;
+import org.springframework.data.annotation.CreatedDate;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+@Entity
 public class Match implements Comparable<Match> {
 
+    @Id
+    @GeneratedValue(generator = "uuid")
+    @GenericGenerator(name = "uuid", strategy = "uuid2")
+    private String id;
+
     private int index;
-    private LocalDate date;
+
+    private LocalDateTime createdAt;
+
+    @OneToMany
     private List<Round> rounds;
-    private Map<Player, Integer> playerScore;
 
     public Match() {
-        this.date = LocalDate.now();
+        this.createdAt = LocalDateTime.now();
         this.rounds = new ArrayList<>();
-        this.playerScore = new HashMap<>();
         this.index = -1;
     }
 
@@ -26,56 +41,44 @@ public class Match implements Comparable<Match> {
         this.index = index;
     }
 
+    /**
+     * Get the total sum of scores from all rounds for the player.
+     *
+     * @param player the player
+     * @return The total sum of scores, zero if player has no score yet or player is not part of
+     * the players list.
+     */
     public int getTotalScoreForPlayer(Player player) {
-        if (this.playerScore.containsKey(player))
-            return this.playerScore.get(player);
-        return 0;
+        return this.getRounds().stream().filter(r -> r.getDeclarer().equals(player))
+                .mapToInt(Round::getScore).sum();
     }
 
     public void saveRound(Round round) {
+        // TODO add an algorithm which checks that the given score value is valid Skat score value.
         if (round.getScore() == 0) throw new IllegalStateException(
-                "Round cannot be added because a score of 0 is not valid."
-        );
-        /**if (this.rounds.size() != 0 && round.getIndex() == 0) {
-            round.setIndex(this.rounds.size());
-            this.rounds.add(round);
-        }
-        else if (this.rounds.size() !=0 && round.getIndex() != 0)
-            this.rounds.set(round.getIndex(), round);
-        else if (this.rounds.size() == 0 && round.getIndex() == 0)
-            this.rounds.add(round);
-        else
-            throw new IllegalStateException(
-                    String.format("Round cannot be added. Please check if index %d is correct.",
-                            round.getIndex())
-            );
-         **/
+                "Round cannot be added because a score of 0 is not valid.");
+
+        int index = round.getIndex();
+
+        if (index > this.rounds.size() || index < -1) throw new IndexOutOfBoundsException(
+                String.format("Invalid round index %d." , index));
+
         if (round.getIndex() == -1) {
             round.setIndex(this.rounds.size());
             this.rounds.add(round);
         } else {
             this.rounds.set(round.getIndex(), round);
         }
-
-        // update the players score
-        Player declarer = round.getDeclarer();
-        if ( !this.playerScore.containsKey(declarer))
-            this.playerScore.put(declarer, 0);
-
-        int newScore = Math.addExact(this.playerScore.get(declarer), round.getScore());
-        this.playerScore.put(round.getDeclarer(), newScore);
     }
 
     public void deleteRound(Round round) {
         if (!this.getRounds().contains(round))
             throw new IndexOutOfBoundsException(
-                    String.format("Round with index=%d cannot be removed because it is not in list of rounds for this match."
+                    String.format(
+                            "Round with index=%d cannot be removed because it is not in" +
+                                    " list of rounds for this match."
                             , round.getIndex()));
 
-        // update the players score
-        Player declarer = round.getDeclarer();
-        int newScore = Math.subtractExact(this.playerScore.get(declarer), round.getScore());
-        this.playerScore.put(round.getDeclarer(), newScore);
         this.rounds.removeIf(r -> r.getIndex() == round.getIndex());
     }
 
@@ -83,47 +86,22 @@ public class Match implements Comparable<Match> {
         return Collections.unmodifiableList(rounds);
     }
 
-    public LocalDate getDate() {
-        return date;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
-
+    /**
+     * Rounds are ordered in their chronological appearance.
+     *
+     * @param other the match to compare to
+     * @return standard compareTo return values
+     */
     @Override
     public int compareTo(Match other) {
         return Integer.compare(this.getIndex(), other.getIndex());
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder result = new StringBuilder();
-        String newLine = System.getProperty("line.separator");
-
-        result.append(this.getClass().getName());
-        result.append(" Object {");
-        result.append(newLine);
-
-        //determine fields declared in this class only (no fields of superclass)
-        Field[] fields = this.getClass().getDeclaredFields();
-
-        //print field names paired with their values
-        for (Field field : fields) {
-            result.append("  ");
-            try {
-                result.append(field.getName());
-                result.append(": ");
-                //requires access to private field:
-                result.append(field.get(this));
-            } catch (IllegalAccessException ex) {
-                System.out.println(ex.getLocalizedMessage());
-            }
-            result.append(newLine);
-        }
-        result.append("}");
-
-        return result.toString();
     }
 }

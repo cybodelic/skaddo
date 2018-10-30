@@ -4,23 +4,25 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.fail;
 
 public class PlayerGroupTest {
 
-    final private String PLAYER_GROUP_NAME = "Demo Group";
-    private int[] scores = new int[]{18, 120, 23, -72, 48, 27, 36, 22, -96, 46, 33};
+    private final String PLAYER_GROUP_NAME = "Demo Group";
+    private final int NUMBER_OF_MATCHES = 1000;
+    private final int NUMBER_OF_ROUNDS_PER_MATCH = 150;
+    Map<Player, Integer> playerScores = new HashMap<>();
     private List<Player> players;
     private PlayerGroup playerGroup;
 
     @Before
     public void setup() {
-
         playerGroup = new PlayerGroup(PLAYER_GROUP_NAME);
         players = new ArrayList<>();
         Player p1 = new Player("player1@domainx.net");
@@ -39,37 +41,48 @@ public class PlayerGroupTest {
         playerGroup.setPlayers(players);
     }
 
-    @Test
-    public void isNameAndCreatedDateInitialized() {
-        assertThat(this.playerGroup.getName()).isEqualTo(PLAYER_GROUP_NAME);
-        assertThat(this.playerGroup.getCreatedAt().toLocalDate()).isEqualByComparingTo(LocalDate.now());
-    }
+    /**
+     * Generate test data (potentially huges volumes) which is not used by every test in this class
+     * and therefore is not generated in @Setup method.
+     */
+    private void generateTestData() {
+        // initialize the playerScore maps which is later used for assertions
+        playerScores = new HashMap<>();
+        players.forEach(player -> playerScores.put(player, 0));
 
-    @Test
-    public void getTotalScoreForPlayer() {
-        Map<Player, Integer> playerScoresForVerification = new HashMap<>();
-        players.forEach(player -> playerScoresForVerification.put(player, 0));
-        IntStream.range(0, 10).forEach(
-                iM -> {
+        IntStream.range(0, NUMBER_OF_MATCHES).forEach(iM -> {
                     Match match = new Match();
-                    IntStream.range(0, 10).forEach(
+                    IntStream.range(0, NUMBER_OF_ROUNDS_PER_MATCH).forEach(
                             iR -> {
                                 Player player = players.get(new Random().nextInt(players.size()));
-                                int score = scores[new Random().nextInt(scores.length)];
+                                int score =
+                                        SkatConstants.POSSIBLE_SCORE_VALUES[new Random()
+                                                .nextInt(SkatConstants.POSSIBLE_SCORE_VALUES.length)];
                                 Round round = new Round(player, score);
                                 match.saveRound(round);
-                                int newScore = playerScoresForVerification.get(player) + score;
-                                playerScoresForVerification.put(player, newScore);
+                                int newScore = playerScores.get(player) + score;
+                                playerScores.put(player, newScore);
                             }
                     );
                     playerGroup.saveMatch(match);
                 }
         );
-        players.forEach(
-                player -> assertThat(
-                        playerGroup.getTotalScoreForPlayer(player))
-                        .isEqualTo(playerScoresForVerification.get(player))
-        );
+    }
+
+    @Test
+    public void isNameAndCreatedDateInitialized() {
+        assertThat(this.playerGroup.getName()).isEqualTo(PLAYER_GROUP_NAME);
+        assertThat(this.playerGroup.getCreatedAt().toLocalDate())
+                .isEqualTo(LocalDate.now());
+    }
+
+    @Test
+    public void getTotalScoreForPlayer() {
+        generateTestData();
+
+        // compare player scores returned by method under test with scores saved by this test class.
+        players.forEach(player -> assertThat(playerGroup.getTotalScoreForPlayer(player))
+                .isEqualTo(playerScores.get(player)));
 
         // test correct score after deleting a round from one match
         Match matchToBeChanged = playerGroup.getMatches().get(0);
@@ -84,15 +97,13 @@ public class PlayerGroupTest {
         assertThat(newScoreInPlayerGroup).isEqualTo(newScore);
 
         // check that only the score of the declarer of the deleted round has changed
-        playerScoresForVerification
+        playerScores
                 .keySet()
                 .stream()
                 .filter(p -> !p.equals(declarer))
                 .forEach(p -> assertThat(
                         playerGroup.getTotalScoreForPlayer(p))
-                        .isEqualTo(playerScoresForVerification.get(p)));
-
-        fail("test not complete. need to check with updates");
+                        .isEqualTo(playerScores.get(p)));
     }
 
     @Test
@@ -105,12 +116,9 @@ public class PlayerGroupTest {
 
     @Test
     public void getPlayersReturnsImmutableList() {
-        assertThatThrownBy(
-                () ->
-                        playerGroup.getPlayers().remove(
-                                players.get(0)
-                        )
-        ).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() ->
+                playerGroup.getPlayers().remove(players.get(0)))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
@@ -146,18 +154,18 @@ public class PlayerGroupTest {
         assertThat(playerGroup.getMatches().size()).isEqualTo(10);
         IntStream.range(0, 10).forEach(
                 i ->
-                        playerGroup.getMatches().get(i).setDate(
-                                LocalDate.now().minusDays(i)
+                        playerGroup.getMatches().get(i).setCreatedAt(
+                                LocalDateTime.now().minusDays(i)
                         )
         );
         IntStream.range(0, 10).forEach(
                 i ->
                 {
                     assertThat(
-                        playerGroup.getMatches().get(i).getDate())
-                                .isEqualByComparingTo(
-                                        LocalDate.now().minusDays(i)
-                                );
+                            playerGroup.getMatches().get(i).getCreatedAt().toLocalDate())
+                            .isEqualTo(
+                                    LocalDate.now().minusDays(i)
+                            );
                     assertThat(playerGroup.getMatches().get(i).getIndex())
                             .isEqualTo(i);
                 }
@@ -167,15 +175,30 @@ public class PlayerGroupTest {
 
     @Test
     public void deleteMatch() {
-        fail("deletMatch test not implemented");
+        generateTestData();
+
+        final Match matchToDelete = this.playerGroup.getMatches().get(
+                ThreadLocalRandom.current().nextInt(this.playerGroup.getMatches().size())
+        );
+
+        Map<Player, Integer> newPlayersScores = new HashMap<>();
+        this.playerGroup.getPlayers().forEach(p -> newPlayersScores.put(p,
+                this.playerGroup.getTotalScoreForPlayer(p) - matchToDelete
+                        .getTotalScoreForPlayer(p)));
+
+        this.playerGroup.deleteMatch(matchToDelete);
+
+        this.playerGroup.getPlayers().forEach(
+                p -> assertThat(this.playerGroup.getTotalScoreForPlayer(p))
+                        .isEqualTo(newPlayersScores.get(p)));
+
     }
 
     @Test
     public void saveMatchWithInvalidNumberOfPlayersInGroup() {
         playerGroup = new PlayerGroup(PLAYER_GROUP_NAME);
         playerGroup.setPlayers(players.subList(0, 1));
-        assertThatThrownBy(
-                () -> playerGroup.saveMatch(new Match()))
+        assertThatThrownBy(() -> playerGroup.saveMatch(new Match()))
                 .isInstanceOf(IllegalStateException.class);
     }
 }
