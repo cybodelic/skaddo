@@ -5,17 +5,14 @@ import org.hibernate.annotations.GenericGenerator;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Entity
 public class PlayerGroup {
 
     @Id
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "uuid2")
-    private String id;
+    @GeneratedValue
+    private Long id;
 
     @ManyToMany
     private List<Player> players;
@@ -42,14 +39,11 @@ public class PlayerGroup {
         this.setName(name);
     }
 
-
     public int getTotalScoreForPlayer(Player player) {
         return this.matches.stream().mapToInt(m -> m.getTotalScoreForPlayer(player)).sum();
     }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
 
     public void setName(String name) {
         this.name = name;
@@ -66,12 +60,12 @@ public class PlayerGroup {
         this.players = players;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
     //TODO check if this method can be removed (should only be used by persistence framework)
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

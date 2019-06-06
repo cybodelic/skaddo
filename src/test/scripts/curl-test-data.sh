@@ -24,7 +24,7 @@ RURI=`curl -i -X POST -H "Content-Type:application/json" -d "{\"score\":18}" htt
 RURI=`tr -dc '[[:print:]]' <<< "${RURI}"`;
 echo "Created "${RURI};
 curl -X PUT -d "http://localhost:8080/users/gandalf@mittelerde.de" -H "Content-Type:text/uri-list" ${RURI}/declarer;
-curl -X PUT -d "${RURI}" -H "Content-Type:text/uri-list" $MURI/rounds;
+curl -X POST -d "${RURI}" -H "Content-Type:text/uri-list" $MURI/rounds;
 # create another round and add to match
 RURI=`curl -i -X POST -H "Content-Type:application/json" -d "{\"score\":72}" http://localhost:8080/rounds |grep Location |awk '{print $2}'`;
 RURI=`tr -dc '[[:print:]]' <<< "${RURI}"`;

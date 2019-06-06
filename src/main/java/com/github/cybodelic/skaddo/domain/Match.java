@@ -1,8 +1,5 @@
 package com.github.cybodelic.skaddo.domain;
 
-import org.hibernate.annotations.GenericGenerator;
-import org.springframework.data.annotation.CreatedDate;
-
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -16,9 +13,8 @@ import java.util.List;
 public class Match implements Comparable<Match> {
 
     @Id
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "uuid2")
-    private String id;
+    @GeneratedValue
+    private Long id;
 
     private int index;
 
@@ -31,6 +27,10 @@ public class Match implements Comparable<Match> {
         this.createdAt = LocalDateTime.now();
         this.rounds = new ArrayList<>();
         this.index = -1;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     protected int getIndex() {
@@ -53,6 +53,10 @@ public class Match implements Comparable<Match> {
                 .mapToInt(Round::getScore).sum();
     }
 
+    public void recalculatePlayerScores() {
+        // TODO implement
+    }
+
     public void saveRound(Round round) {
         // TODO add an algorithm which checks that the given score value is valid Skat score value.
         if (round.getScore() == 0) throw new IllegalStateException(
@@ -61,7 +65,7 @@ public class Match implements Comparable<Match> {
         int index = round.getIndex();
 
         if (index > this.rounds.size() || index < -1) throw new IndexOutOfBoundsException(
-                String.format("Invalid round index %d." , index));
+                String.format("Invalid round index %d.", index));
 
         if (round.getIndex() == -1) {
             round.setIndex(this.rounds.size());
@@ -78,8 +82,7 @@ public class Match implements Comparable<Match> {
                             "Round with index=%d cannot be removed because it is not in" +
                                     " list of rounds for this match."
                             , round.getIndex()));
-
-        this.rounds.removeIf(r -> r.getIndex() == round.getIndex());
+        this.rounds.remove(round);
     }
 
     public List<Round> getRounds() {

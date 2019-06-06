@@ -1,7 +1,5 @@
 package com.github.cybodelic.skaddo.domain;
 
-import org.hibernate.annotations.GenericGenerator;
-
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -12,15 +10,15 @@ import java.time.LocalDateTime;
 public class Round implements Comparable<Round> {
 
     @Id
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "uuid2")
-    private String id;
+    @GeneratedValue
+    private Long id;
 
     @OneToOne
     private Player declarer;
+
     private LocalDateTime createdAt;
+
     private int score;
-    private int index;
 
     public Round() {
         super();
@@ -30,7 +28,6 @@ public class Round implements Comparable<Round> {
     public Round(Player declarer, int score) {
         this.declarer = declarer;
         this.score = score;
-        this.index = -1;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -58,16 +55,15 @@ public class Round implements Comparable<Round> {
         this.score = score;
     }
 
-    protected int getIndex() {
-        return index;
-    }
-
-    protected void setIndex(int index) {
-        this.index = index;
+    public Long getId() {
+        return id;
     }
 
     @Override
     public int compareTo(Round r) {
-        return (Integer.compare(this.index, r.getIndex()));
+        if ( null == r ) {
+            throw new NullPointerException("Cannot compare to null");
+        }
+        return this.createdAt.compareTo(r.getCreatedAt());
     }
 }

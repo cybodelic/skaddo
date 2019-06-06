@@ -10,7 +10,7 @@ import org.springframework.data.rest.core.annotation.RestResource;
 import java.util.List;
 
 @RepositoryRestResource
-public interface PlayerGroupRepository extends JpaRepository<PlayerGroup, String> {
+public interface PlayerGroupRepository extends JpaRepository<PlayerGroup, Long> {
 
     List<PlayerGroup> findAllByName(@Param("name") String name);
 
@@ -30,5 +30,5 @@ public interface PlayerGroupRepository extends JpaRepository<PlayerGroup, String
     @RestResource(exported = false)
     @Query(value = "SELECT r.declarer.id, SUM(r.score) from PlayerGroup g JOIN g.matches m JOIN m" +
             ".rounds r WHERE g.id = :groupId GROUP BY r.declarer.id")
-    List<Object[]> getPlayerGroupScores(@Param("groupId") String groupId);
+    List<Object[]> getPlayerGroupScores(@Param("groupId") Long groupId);
 }

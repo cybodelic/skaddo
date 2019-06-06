@@ -113,7 +113,7 @@ public class PlayerGroupRepositoryTest {
     public void testUpdatePlayerAndCheckThatReferenceIsUpdatedToo() {
         List<PlayerGroup> groups = playerGroupRepository.findAllByName(TESTGROUP_NAMES[0]);
         PlayerGroup group = groups.get(0);
-        String gID = group.getId();
+        Long gID = group.getId();
         Player creator = group.getCreatedBy();
         String newNickName = "new nickname";
         creator.setNickName(newNickName);
