@@ -1,6 +1,6 @@
 package com.github.cybodelic.skaddo;
 
-import com.github.cybodelic.skaddo.controller.MatchEventHandler;
+import com.github.cybodelic.skaddo.handlers.MatchEventHandler;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;

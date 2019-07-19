@@ -4,9 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,12 +57,12 @@ public class PlayerGroupTest {
                                         SkatConstants.POSSIBLE_SCORE_VALUES[new Random()
                                                 .nextInt(SkatConstants.POSSIBLE_SCORE_VALUES.length)];
                                 Round round = new Round(player, score);
-                                match.saveRound(round);
+                                match.getRounds().add(round);
                                 int newScore = playerScores.get(player) + score;
                                 playerScores.put(player, newScore);
                             }
                     );
-                    playerGroup.saveMatch(match);
+                    playerGroup.getMatches().add(match);
                 }
         );
     }
@@ -90,8 +88,8 @@ public class PlayerGroupTest {
         Player declarer = roundToBeRemoved.getDeclarer();
         int previousScore = playerGroup.getTotalScoreForPlayer(declarer);
         int score = roundToBeRemoved.getScore();
-        matchToBeChanged.deleteRound(roundToBeRemoved);
-        playerGroup.saveMatch(matchToBeChanged);
+        matchToBeChanged.getRounds().remove(roundToBeRemoved);
+        playerGroup.getMatches().add(matchToBeChanged);
         int newScore = previousScore - score;
         int newScoreInPlayerGroup = playerGroup.getTotalScoreForPlayer(declarer);
         assertThat(newScoreInPlayerGroup).isEqualTo(newScore);
@@ -108,7 +106,7 @@ public class PlayerGroupTest {
 
     @Test
     public void playersCannotBeChangedAfterMatchesHaveBeenSaved() {
-        playerGroup.saveMatch(new Match());
+        playerGroup.getMatches().add(new Match());
         assertThatThrownBy(
                 () -> playerGroup.setPlayers(Collections.emptyList())
         ).isInstanceOf(UnsupportedOperationException.class);
@@ -124,81 +122,7 @@ public class PlayerGroupTest {
     @Test
     public void saveFirstMatch() {
         Match m = new Match();
-        playerGroup.saveMatch(m);
+        playerGroup.getMatches().add(m);
         assertThat(playerGroup.getMatches()).containsOnly(m);
-    }
-
-    @Test
-    public void saveFirstMatchWithInvalidIndex() {
-        Match m = new Match();
-        m.setIndex(5);
-        assertThatThrownBy(
-                () -> playerGroup.saveMatch(m)).isInstanceOf(IllegalStateException.class);
-    }
-
-    @Test
-    public void saveMatches() {
-        IntStream.range(0, 10).forEach(
-                i -> playerGroup.saveMatch(new Match())
-        );
-        assertThat(playerGroup.getMatches().size()).isEqualTo(10);
-        IntStream.range(0, playerGroup.getMatches().size()).forEach(
-                i ->
-                        assertThat(playerGroup.getMatches().get(i).getIndex()).isEqualTo(i)
-        );
-    }
-
-    @Test
-    public void updateMatches() {
-        IntStream.range(0, 10).forEach(i -> playerGroup.saveMatch(new Match()));
-        assertThat(playerGroup.getMatches().size()).isEqualTo(10);
-        IntStream.range(0, 10).forEach(
-                i ->
-                        playerGroup.getMatches().get(i).setCreatedAt(
-                                LocalDateTime.now().minusDays(i)
-                        )
-        );
-        IntStream.range(0, 10).forEach(
-                i ->
-                {
-                    assertThat(
-                            playerGroup.getMatches().get(i).getCreatedAt().toLocalDate())
-                            .isEqualTo(
-                                    LocalDate.now().minusDays(i)
-                            );
-                    assertThat(playerGroup.getMatches().get(i).getIndex())
-                            .isEqualTo(i);
-                }
-        );
-
-    }
-
-    @Test
-    public void deleteMatch() {
-        generateTestData();
-
-        final Match matchToDelete = this.playerGroup.getMatches().get(
-                ThreadLocalRandom.current().nextInt(this.playerGroup.getMatches().size())
-        );
-
-        Map<Player, Integer> newPlayersScores = new HashMap<>();
-        this.playerGroup.getPlayers().forEach(p -> newPlayersScores.put(p,
-                this.playerGroup.getTotalScoreForPlayer(p) - matchToDelete
-                        .getTotalScoreForPlayer(p)));
-
-        this.playerGroup.deleteMatch(matchToDelete);
-
-        this.playerGroup.getPlayers().forEach(
-                p -> assertThat(this.playerGroup.getTotalScoreForPlayer(p))
-                        .isEqualTo(newPlayersScores.get(p)));
-
-    }
-
-    @Test
-    public void saveMatchWithInvalidNumberOfPlayersInGroup() {
-        playerGroup = new PlayerGroup(PLAYER_GROUP_NAME);
-        playerGroup.setPlayers(players.subList(0, 1));
-        assertThatThrownBy(() -> playerGroup.saveMatch(new Match()))
-                .isInstanceOf(IllegalStateException.class);
     }
 }

@@ -19,30 +19,37 @@ MURI=`curl -i -X POST -H "Content-Type:application/json" -d "{}" http://localhos
 MURI=`tr -dc '[[:print:]]' <<< "${MURI}"`;
 echo "Created "${MURI};
 
+# add match to player group
+curl -X PUT -d "${MURI}" -H "Content-Type:text/uri-list" $PGURI/matches;
+
 # create a round and add to match
 RURI=`curl -i -X POST -H "Content-Type:application/json" -d "{\"score\":18}" http://localhost:8080/rounds |grep Location |awk '{print $2}'`;
 RURI=`tr -dc '[[:print:]]' <<< "${RURI}"`;
 echo "Created "${RURI};
 curl -X PUT -d "http://localhost:8080/users/gandalf@mittelerde.de" -H "Content-Type:text/uri-list" ${RURI}/declarer;
-curl -X POST -d "${RURI}" -H "Content-Type:text/uri-list" $MURI/rounds;
+curl -X PATCH -d "${RURI}" -H "Content-Type:text/uri-list" $MURI/rounds;
+
 # create another round and add to match
 RURI=`curl -i -X POST -H "Content-Type:application/json" -d "{\"score\":72}" http://localhost:8080/rounds |grep Location |awk '{print $2}'`;
 RURI=`tr -dc '[[:print:]]' <<< "${RURI}"`;
 echo "Created "${RURI};
 curl -X PUT -d "http://localhost:8080/users/gandalf@mittelerde.de" -H "Content-Type:text/uri-list" ${RURI}/declarer;
 curl -X PATCH -d "${RURI}" -H "Content-Type:text/uri-list" $MURI/rounds;
+
 # create another round and add to match
 RURI=`curl -i -X POST -H "Content-Type:application/json" -d "{\"score\":-24}" http://localhost:8080/rounds |grep Location |awk '{print $2}'`;
 RURI=`tr -dc '[[:print:]]' <<< "${RURI}"`;
 echo "Created "${RURI};
 curl -X PUT -d "http://localhost:8080/users/gandalf@mittelerde.de" -H "Content-Type:text/uri-list" ${RURI}/declarer;
 curl -X PATCH -d "${RURI}" -H "Content-Type:text/uri-list" $MURI/rounds;
+
 # create another round and add to match
 RURI=`curl -i -X POST -H "Content-Type:application/json" -d "{\"score\":-72}" http://localhost:8080/rounds |grep Location |awk '{print $2}'`;
 RURI=`tr -dc '[[:print:]]' <<< "${RURI}"`;
 echo "Created "${RURI};
 curl -X PUT -d "http://localhost:8080/users/Frodo@mittelerde.de" -H "Content-Type:text/uri-list" ${RURI}/declarer;
 curl -X PATCH -d "${RURI}" -H "Content-Type:text/uri-list" $MURI/rounds;
+
 # create another round and add to match
 RURI=`curl -i -X POST -H "Content-Type:application/json" -d "{\"score\":120}" http://localhost:8080/rounds |grep Location |awk '{print $2}'`;
 RURI=`tr -dc '[[:print:]]' <<< "${RURI}"`;
@@ -50,8 +57,11 @@ echo "Created "${RURI};
 curl -X PUT -d "http://localhost:8080/users/Aragorn@mittelerde.de" -H "Content-Type:text/uri-list" ${RURI}/declarer;
 curl -X PATCH -d "${RURI}" -H "Content-Type:text/uri-list" $MURI/rounds;
 
-# add match to player group
-curl -X PUT -d "${MURI}" -H "Content-Type:text/uri-list" $PGURI/matches;
+# create another round but do not add to match
+RURI=`curl -i -X POST -H "Content-Type:application/json" -d "{\"score\":-60}" http://localhost:8080/rounds |grep Location |awk '{print $2}'`;
+RURI=`tr -dc '[[:print:]]' <<< "${RURI}"`;
+echo "Created "${RURI};
+curl -X PUT -d "http://localhost:8080/users/Aragorn@mittelerde.de" -H "Content-Type:text/uri-list" ${RURI}/declarer;
 
 # create another match and add to player group
 MURI=`curl -i -X POST -H "Content-Type:application/json" -d "{}" http://localhost:8080/matches |grep Location |awk '{print $2}'`;

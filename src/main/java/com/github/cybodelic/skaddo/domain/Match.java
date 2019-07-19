@@ -1,13 +1,11 @@
 package com.github.cybodelic.skaddo.domain;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 public class Match implements Comparable<Match> {
@@ -16,29 +14,23 @@ public class Match implements Comparable<Match> {
     @GeneratedValue
     private Long id;
 
-    private int index;
+    @OneToMany
+    @OrderBy("createdAt DESC")
+    private List<Round> rounds;
+
+    @ElementCollection
+    private Map<String, Integer> scores;
 
     private LocalDateTime createdAt;
-
-    @OneToMany
-    private List<Round> rounds;
 
     public Match() {
         this.createdAt = LocalDateTime.now();
         this.rounds = new ArrayList<>();
-        this.index = -1;
+        this.scores = new HashMap<>();
     }
 
     public Long getId() {
         return id;
-    }
-
-    protected int getIndex() {
-        return index;
-    }
-
-    protected void setIndex(int index) {
-        this.index = index;
     }
 
     /**
@@ -53,40 +45,20 @@ public class Match implements Comparable<Match> {
                 .mapToInt(Round::getScore).sum();
     }
 
-    public void recalculatePlayerScores() {
-        // TODO implement
+    public Map<String, Integer> getScores() {
+        return scores;
     }
 
-    public void saveRound(Round round) {
-        // TODO add an algorithm which checks that the given score value is valid Skat score value.
-        if (round.getScore() == 0) throw new IllegalStateException(
-                "Round cannot be added because a score of 0 is not valid.");
-
-        int index = round.getIndex();
-
-        if (index > this.rounds.size() || index < -1) throw new IndexOutOfBoundsException(
-                String.format("Invalid round index %d.", index));
-
-        if (round.getIndex() == -1) {
-            round.setIndex(this.rounds.size());
-            this.rounds.add(round);
-        } else {
-            this.rounds.set(round.getIndex(), round);
-        }
-    }
-
-    public void deleteRound(Round round) {
-        if (!this.getRounds().contains(round))
-            throw new IndexOutOfBoundsException(
-                    String.format(
-                            "Round with index=%d cannot be removed because it is not in" +
-                                    " list of rounds for this match."
-                            , round.getIndex()));
-        this.rounds.remove(round);
+    public void setScores(Map<String, Integer> scores) {
+        this.scores = scores;
     }
 
     public List<Round> getRounds() {
-        return Collections.unmodifiableList(rounds);
+        return this.rounds;
+    }
+
+    public void setRounds(List<Round> rounds) {
+        this.rounds = rounds;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -105,6 +77,9 @@ public class Match implements Comparable<Match> {
      */
     @Override
     public int compareTo(Match other) {
-        return Integer.compare(this.getIndex(), other.getIndex());
+        if ( null == other ) {
+            throw new NullPointerException("Cannot compare to null");
+        }
+        return this.createdAt.compareTo(other.getCreatedAt());
     }
 }

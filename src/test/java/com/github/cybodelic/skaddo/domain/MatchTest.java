@@ -1,15 +1,15 @@
 package com.github.cybodelic.skaddo.domain;
 
-import org.assertj.core.api.Assertions;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.hamcrest.Matchers.lessThan;
 
 public class MatchTest {
 
@@ -44,7 +44,7 @@ public class MatchTest {
                     Player p = players.get(new Random().nextInt(this.players.size()));
                     int score = SkatConstants.POSSIBLE_SCORE_VALUES[new Random().nextInt(
                             SkatConstants.POSSIBLE_SCORE_VALUES.length)];
-                    match.saveRound(new Round(p, score));
+                    match.getRounds().add(new Round(p, score));
                     // calculate the score and store it for assertions in test cases
                     this.playerScores.put(p, this.playerScores.get(p) + score);
                 }
@@ -61,19 +61,9 @@ public class MatchTest {
     }
 
     @Test
-    public void getTotalScoreByPlayerV2Test() {
-        generateTestData();
-        playerScores.keySet()
-                .forEach(p ->
-                        assertThat(match.getTotalScoreForPlayer(p)).isEqualTo(playerScores.get(p))
-                );
-    }
-
-
-    @Test
     public void roundsAddedInRightOrderTest() {
         Arrays.stream(SkatConstants.POSSIBLE_SCORE_VALUES)
-            .forEach(e -> match.saveRound(
+            .forEach(e -> match.getRounds().add(
                 new Round(players.get(
                         new Random().nextInt(players.size())), e)
                 )
@@ -88,107 +78,6 @@ public class MatchTest {
     }
 
     @Test
-    public void saveFirstRound() {
-        Round m = new Round(players.get(0), SkatConstants.POSSIBLE_SCORE_VALUES[0]);
-        match.saveRound(m);
-        Assertions.assertThat(match.getRounds())
-                .containsOnly(m);
-    }
-
-    @Test
-    public void saveFirstRoundWithInvalidIndex() {
-        Round m = new Round(players.get(0), SkatConstants.POSSIBLE_SCORE_VALUES[0]);
-        m.setIndex(5);
-        assertThatThrownBy(
-                () -> match.saveRound(m)).isInstanceOf(IndexOutOfBoundsException.class);
-    }
-
-    @Test
-    public void saveRounds() {
-        IntStream.range(0, SkatConstants.POSSIBLE_SCORE_VALUES.length).forEach(i ->
-                match.saveRound(new Round(players.get(
-                        ThreadLocalRandom.current()
-                                .nextInt(players.size()))
-                        , SkatConstants.POSSIBLE_SCORE_VALUES[i]))
-        );
-        Assertions.assertThat(match.getRounds()
-                .size())
-                .isEqualTo(SkatConstants.POSSIBLE_SCORE_VALUES.length);
-        IntStream.range(0, match.getRounds()
-                .size())
-                .forEach(i ->
-                    Assertions.assertThat(match.getRounds()
-                        .get(i)
-                        .getIndex())
-                        .isEqualTo(i)
-                );
-    }
-
-    @Test
-    public void updateRounds() {
-        // save rounds
-        IntStream.range(0, SkatConstants.POSSIBLE_SCORE_VALUES.length)
-                .forEach(i ->
-                    match.saveRound(new Round(players.get((i % players.size()))
-                            , SkatConstants.POSSIBLE_SCORE_VALUES[i]))
-                );
-        Assertions.assertThat(match.getRounds()
-                .size())
-                .isEqualTo(SkatConstants.POSSIBLE_SCORE_VALUES.length);
-        // update rounds by reversing the scores and changing the declarer
-        IntStream.range(0, SkatConstants.POSSIBLE_SCORE_VALUES.length)
-                .forEach(i -> {
-                        Round r = match.getRounds()
-                                .get(i);
-                        r.setScore(SkatConstants.POSSIBLE_SCORE_VALUES.length - (i + 1));
-                        r.setDeclarer(players.get(((i + 1) % players.size())));
-                    }
-                );
-        // check that updates are applied correctly
-        IntStream.range(0, SkatConstants.POSSIBLE_SCORE_VALUES.length)
-                .forEach(i -> {
-                        Round r = match.getRounds().get(i);
-                        Assertions.assertThat(r.getIndex())
-                                .isEqualTo(i);
-                        Assertions.assertThat(r.getScore())
-                                .isEqualTo(
-                                        SkatConstants.POSSIBLE_SCORE_VALUES.length - (i + 1));
-                        Assertions.assertThat(r.getDeclarer())
-                                .isEqualTo(
-                                        players.get(((i + 1) % players.size()))
-                                );
-                    }
-                );
-
-    }
-
-    @Test
-    public void deleteRound() {
-        generateTestData();
-        List<Round> rounds = match.getRounds();
-
-        // check that its not possible to manipulate list of rounds directly.
-        assertThatThrownBy(
-                () -> rounds.remove(0))
-                .isInstanceOf(UnsupportedOperationException.class
-                );
-
-        // save data needed for later assertions
-        Round roundToBeDeleted = rounds.get(0);
-        int sizeBefore = rounds.size();
-        Player declarer = roundToBeDeleted.getDeclarer();
-        int scoreBefore = match.getTotalScoreForPlayer(declarer);
-
-        match.deleteRound(roundToBeDeleted);
-
-        assertThat(match.getRounds()
-                .size()).isEqualTo(sizeBefore - 1);
-        assertThat(match.getTotalScoreForPlayer(declarer))
-                .isEqualTo(scoreBefore - roundToBeDeleted.getScore());
-        assertThat(match.getRounds()).doesNotContain(roundToBeDeleted);
-    }
-
-    @Test
     public void getScoreForPlayerWithoutRoundReturnsZero() {
         assertThat(match.getTotalScoreForPlayer(players.get(0))).isEqualTo(0);
     }
@@ -200,7 +89,16 @@ public class MatchTest {
 
 
     @Test
-    public void compareToTest() {
-        // TODO implement test
+    public void compareToTest() throws InterruptedException {
+        Match m1 = new Match();
+        Thread.sleep(2);
+        Match m2 = new Match();
+        Assert.assertThat(m1.compareTo(m2), lessThan(0));
+    }
+
+    @Test
+    public void compareToNullTest() throws InterruptedException {
+        Match m1 = new Match();
+        assertThatThrownBy( () -> m1.compareTo(null)).isInstanceOf(NullPointerException.class);
     }
 }
